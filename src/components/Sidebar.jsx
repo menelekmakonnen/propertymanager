@@ -3,8 +3,9 @@
 // Fixed spacing. Proper internal padding.
 // ============================================
 
-import { NavLink, useLocation } from 'react-router-dom';
+import { NavLink, Link, useLocation } from 'react-router-dom';
 import useAuthStore from '../store/authStore';
+import { MobusLogoLink } from './MobusLogo';
 
 const SCOPE_ORDER = { property: 0, country: 1, group: 2 };
 
@@ -88,20 +89,9 @@ export default function Sidebar({ isOpen, onClose }) {
           transition: 'transform 0.3s cubic-bezier(0.16,1,0.3,1)',
         }}
       >
-        {/* Logo */}
-        <div style={{ height: 72, padding: '0 24px', display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0 }}>
-          <div style={{
-            width: 36, height: 36, borderRadius: 11,
-            background: 'linear-gradient(135deg, #d4a843, #e8c468)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            flexShrink: 0,
-          }}>
-            <span style={{ color: '#0a1128', fontWeight: 900, fontSize: 15 }}>M</span>
-          </div>
-          <div>
-            <div style={{ color: 'white', fontWeight: 900, fontSize: 16, letterSpacing: '-0.01em', lineHeight: 1 }}>MOBUS</div>
-            <div style={{ color: 'rgba(255,255,255,0.12)', fontSize: 8, letterSpacing: '0.25em', fontWeight: 700, marginTop: 2, textTransform: 'uppercase' }}>Property</div>
-          </div>
+        {/* Logo — links to dashboard */}
+        <div style={{ height: 72, padding: '0 24px', display: 'flex', alignItems: 'center', flexShrink: 0 }}>
+          <MobusLogoLink size={34} />
         </div>
 
         {/* Nav */}

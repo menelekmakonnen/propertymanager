@@ -7,6 +7,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import useAuthStore from '../store/authStore';
 import { users } from '../data/users';
+import { MobusLogo } from '../components/MobusLogo';
 
 const SCOPE_BADGES = {
   group: { label: 'Group', bg: '#fef3c7', color: '#92400e' },
@@ -63,13 +64,7 @@ export default function Login() {
       >
         {/* Logo */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-          <div style={{
-            width: 44, height: 44, borderRadius: 14,
-            background: 'linear-gradient(135deg, #d4a843, #e8c468)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-          }}>
-            <span style={{ color: '#0a1128', fontWeight: 900, fontSize: 18 }}>M</span>
-          </div>
+          <MobusLogo size={44} />
           <div>
             <div style={{ color: 'white', fontWeight: 900, fontSize: 18, letterSpacing: '-0.02em', lineHeight: 1 }}>MOBUS</div>
             <div style={{ color: 'rgba(255,255,255,0.2)', fontSize: 9, letterSpacing: '0.25em', fontWeight: 700, marginTop: 3, textTransform: 'uppercase' }}>Property</div>
@@ -124,13 +119,7 @@ export default function Login() {
         <div style={{ width: '100%', maxWidth: 440 }}>
           {/* Mobile logo */}
           <div className="lg:hidden" style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 48 }}>
-            <div style={{
-              width: 40, height: 40, borderRadius: 12,
-              background: 'linear-gradient(135deg, #d4a843, #e8c468)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-            }}>
-              <span style={{ color: '#0a1128', fontWeight: 900, fontSize: 16 }}>M</span>
-            </div>
+            <MobusLogo size={40} />
             <div>
               <div style={{ color: 'white', fontWeight: 900, fontSize: 17, lineHeight: 1 }}>MOBUS</div>
               <div style={{ color: 'rgba(255,255,255,0.15)', fontSize: 8, letterSpacing: '0.25em', fontWeight: 700, marginTop: 2, textTransform: 'uppercase' }}>Property</div>

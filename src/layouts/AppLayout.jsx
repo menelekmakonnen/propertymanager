@@ -8,6 +8,7 @@ import { Outlet, Navigate, useLocation } from 'react-router-dom';
 import useAuthStore from '../store/authStore';
 import Sidebar from '../components/Sidebar';
 import Topbar from '../components/Topbar';
+import MobileBottomNav from '../components/MobileBottomNav';
 
 export default function AppLayout() {
   const isAuthenticated = useAuthStore(s => s.isAuthenticated);
@@ -34,6 +35,9 @@ export default function AppLayout() {
           </div>
         </main>
       </div>
+
+      {/* Mobile bottom navigation */}
+      <MobileBottomNav />
     </div>
   );
 }
