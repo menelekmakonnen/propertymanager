@@ -1,14 +1,26 @@
 // ============================================
 // MOBUS PROPERTY — PAYMENTS PAGE
+// Role-aware: investors see revenue summary
 // ============================================
 
 import { useState, useMemo } from 'react';
-import { useScopedData, useActiveProperty, useIsPortfolioView } from '../hooks/useData';
+import useAuthStore from '../store/authStore';
+import useDataStore from '../store/dataStore';
+import { useScopedData, useActiveProperty, useIsPortfolioView, useRevenueTrend } from '../hooks/useData';
 import { Card, DataTable, Badge, StatsCard, SearchInput, Select, Button, Modal, Tabs } from '../components/ui';
-import { formatCurrency, formatDate, formatStatus, getAgingBucket } from '../utils/formatters';
+import { RevenueBarChart } from '../components/charts';
+import { formatCurrency, formatDate, formatStatus, formatPercent, getAgingBucket } from '../utils/formatters';
 import { PAYMENT_METHOD_LABELS } from '../utils/constants';
 
 export default function Payments() {
+  const currentUser = useAuthStore(s => s.currentUser);
+  if (currentUser?.role === 'viewer') {
+    return <InvestorRevenue />;
+  }
+  return <OperationalPayments />;
+}
+
+function OperationalPayments() {
   const { property } = useActiveProperty();
   const isPortfolio = useIsPortfolioView();
   const data = useScopedData();
@@ -264,6 +276,120 @@ export default function Payments() {
           </div>
         </div>
       </Modal>
+    </div>
+  );
+}
+
+// ─── Investor Revenue View ──────────────────
+function InvestorRevenue() {
+  const data = useScopedData();
+  const dataStore = useDataStore();
+  const revenueTrend = useRevenueTrend();
+  const allPayments = data.getPayments(null);
+
+  const stats = useMemo(() => {
+    const thisMonth = allPayments.filter(p => p.dateDue?.startsWith('2026-04'));
+    const paid = thisMonth.filter(p => p.status === 'paid');
+    const total = thisMonth.reduce((s, p) => s + p.amount, 0);
+    const collected = paid.reduce((s, p) => s + p.amount, 0);
+    return {
+      totalExpected: total,
+      totalCollected: collected,
+      collectionRate: thisMonth.length > 0 ? (paid.length / thisMonth.length) * 100 : 0,
+    };
+  }, [allPayments]);
+
+  // Revenue breakdown by property
+  const propertyRevenue = useMemo(() => {
+    return data.managedProperties.map(prop => {
+      const propPayments = allPayments.filter(p => p.propertyId === prop.id && p.status === 'paid');
+      const revenue = propPayments.reduce((s, p) => s + p.amount, 0);
+      const propStats = dataStore.getPropertyStats(prop.id);
+      return {
+        ...prop,
+        revenue,
+        occupancy: propStats?.occupancyRate || 0,
+        units: propStats?.totalUnits || 0,
+        currency: propPayments[0]?.currency || 'USD',
+      };
+    }).sort((a, b) => b.revenue - a.revenue);
+  }, [allPayments, data.managedProperties]);
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 28 }} className="animate-fade-in">
+      {/* Header */}
+      <div>
+        <h1 style={{ fontSize: 22, fontWeight: 700, color: '#0f172a', marginBottom: 4 }}>Revenue Overview</h1>
+        <p style={{ fontSize: 13, color: '#64748b' }}>Financial performance across your portfolio</p>
+      </div>
+
+      {/* KPI Cards */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 16 }} className="lg:!grid-cols-3">
+        <StatsCard
+          title="Expected Revenue"
+          value={formatCurrency(stats.totalExpected, 'USD')}
+          subtitle="This month"
+          color="gold"
+          icon={<svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>}
+        />
+        <StatsCard
+          title="Collected"
+          value={formatCurrency(stats.totalCollected, 'USD')}
+          subtitle={`${stats.collectionRate.toFixed(0)}% collection rate`}
+          color="green"
+          icon={<svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><polyline points="20 6 9 17 4 12"/></svg>}
+        />
+        <StatsCard
+          title="Collection Rate"
+          value={formatPercent(stats.collectionRate, 0)}
+          color={stats.collectionRate > 80 ? 'green' : 'amber'}
+          icon={<svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>}
+        />
+      </div>
+
+      {/* Revenue Trend */}
+      <Card>
+        <h3 style={{ fontSize: 14, fontWeight: 700, color: '#0f172a', marginBottom: 16 }}>Revenue Trend</h3>
+        <RevenueBarChart data={revenueTrend} height={280} />
+      </Card>
+
+      {/* Revenue by Property */}
+      <div>
+        <h3 style={{ fontSize: 14, fontWeight: 700, color: '#0f172a', marginBottom: 16 }}>Revenue by Property</h3>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          {propertyRevenue.map(prop => {
+            const maxRevenue = propertyRevenue[0]?.revenue || 1;
+            const barWidth = (prop.revenue / maxRevenue) * 100;
+            return (
+              <Card key={prop.id} size="sm">
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <div style={{
+                      width: 32, height: 32, borderRadius: 10, flexShrink: 0,
+                      background: `linear-gradient(135deg, ${prop.gradient?.[0] || '#0a1128'}, ${prop.gradient?.[1] || '#162044'})`,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    }}>
+                      <span style={{ color: 'white', fontSize: 8, fontWeight: 700 }}>{prop.name.slice(0, 2).toUpperCase()}</span>
+                    </div>
+                    <div>
+                      <div style={{ fontSize: 13, fontWeight: 600, color: '#0f172a' }}>{prop.name}</div>
+                      <div style={{ fontSize: 11, color: '#94a3b8' }}>{prop.units} units · {prop.occupancy.toFixed(0)}% occupancy</div>
+                    </div>
+                  </div>
+                  <div style={{ textAlign: 'right' }}>
+                    <div style={{ fontSize: 15, fontWeight: 700, color: '#059669' }}>{formatCurrency(prop.revenue, prop.currency)}</div>
+                    <div style={{ fontSize: 10, color: '#94a3b8' }}>this month</div>
+                  </div>
+                </div>
+                {/* Revenue bar */}
+                <div style={{ height: 4, borderRadius: 2, background: '#eef1f6' }}>
+                  <div style={{ height: '100%', borderRadius: 2, background: 'linear-gradient(90deg, #d4a843, #e8c468)', width: `${barWidth}%`, transition: 'width 0.6s ease' }} />
+                </div>
+              </Card>
+            );
+          })}
+        </div>
+      </div>
     </div>
   );
 }

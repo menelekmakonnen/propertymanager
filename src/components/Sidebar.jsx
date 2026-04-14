@@ -1,13 +1,11 @@
 // ============================================
-// MOBUS PROPERTY — SIDEBAR v4
-// Fixed spacing. Proper internal padding.
+// MOBUS PROPERTY — SIDEBAR v5
+// Role-based navigation filtering
 // ============================================
 
 import { NavLink, Link, useLocation } from 'react-router-dom';
-import useAuthStore from '../store/authStore';
+import useAuthStore, { canAccessPage } from '../store/authStore';
 import { MobusLogoLink } from './MobusLogo';
-
-const SCOPE_ORDER = { property: 0, country: 1, group: 2 };
 
 const ICON = {
   dashboard: <><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/></>,
@@ -20,24 +18,26 @@ const ICON = {
   staff: <><path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6"/><path d="M22 11h-6"/></>,
   development: <><path d="M2 20h20"/><path d="M5 20V8l7-5 7 5v12"/><rect x="9" y="14" width="6" height="6" rx="0.5"/></>,
   analytics: <><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></>,
+  contact: <><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></>,
 };
 
-const SECTIONS = [
-  { key: 'ops', label: 'Operations', minScope: 'property', items: [
-    { path: '/dashboard', label: 'Dashboard', icon: ICON.dashboard },
-    { path: '/units', label: 'Units', icon: ICON.units },
-    { path: '/tenancies', label: 'Tenancies', icon: ICON.tenancies },
-    { path: '/maintenance', label: 'Maintenance', icon: ICON.maintenance },
-    { path: '/payments', label: 'Payments', icon: ICON.payments },
-    { path: '/short-term', label: 'Short-Term', icon: ICON.shortterm },
+// All nav items in a flat list with their page key for role filtering
+const NAV_ITEMS = [
+  { section: 'Operations', items: [
+    { path: '/dashboard', label: 'Dashboard', icon: ICON.dashboard, pageKey: 'dashboard' },
+    { path: '/units', label: 'Units', icon: ICON.units, pageKey: 'units' },
+    { path: '/tenancies', label: 'Tenancies', icon: ICON.tenancies, pageKey: 'tenancies' },
+    { path: '/maintenance', label: 'Maintenance', icon: ICON.maintenance, pageKey: 'maintenance' },
+    { path: '/payments', label: 'Payments', icon: ICON.payments, pageKey: 'payments', investorLabel: 'Revenue' },
+    { path: '/short-term', label: 'Short-Term', icon: ICON.shortterm, pageKey: 'short-term' },
   ]},
-  { key: 'portfolio', label: 'Portfolio', minScope: 'country', items: [
-    { path: '/properties', label: 'Properties', icon: ICON.properties },
-    { path: '/staff', label: 'Staff', icon: ICON.staff },
-    { path: '/development', label: 'Development', icon: ICON.development },
+  { section: 'Portfolio', items: [
+    { path: '/properties', label: 'Properties', icon: ICON.properties, pageKey: 'properties' },
+    { path: '/staff', label: 'Staff', icon: ICON.staff, pageKey: 'staff' },
+    { path: '/development', label: 'Development', icon: ICON.development, pageKey: 'development' },
   ]},
-  { key: 'group', label: 'Group', minScope: 'group', items: [
-    { path: '/analytics', label: 'Analytics', icon: ICON.analytics },
+  { section: 'Group', items: [
+    { path: '/analytics', label: 'Analytics', icon: ICON.analytics, pageKey: 'analytics' },
   ]},
 ];
 
@@ -52,7 +52,8 @@ const FEATURES = [
 export default function Sidebar({ isOpen, onClose }) {
   const currentUser = useAuthStore(s => s.currentUser);
   const location = useLocation();
-  const userScope = SCOPE_ORDER[currentUser?.scopeType] ?? -1;
+  const role = currentUser?.role;
+  const isInvestor = role === 'viewer';
 
   const linkStyle = (active) => ({
     display: 'flex', alignItems: 'center', gap: 12,
@@ -64,6 +65,14 @@ export default function Sidebar({ isOpen, onClose }) {
     transition: 'all 0.2s ease',
     position: 'relative',
   });
+
+  // Filter sections and items by role
+  const filteredSections = NAV_ITEMS
+    .map(section => ({
+      ...section,
+      items: section.items.filter(item => canAccessPage(role, item.pageKey)),
+    }))
+    .filter(section => section.items.length > 0);
 
   return (
     <>
@@ -96,21 +105,22 @@ export default function Sidebar({ isOpen, onClose }) {
 
         {/* Nav */}
         <nav style={{ flex: 1, overflow: 'auto', padding: '8px 16px 20px', display: 'flex', flexDirection: 'column', gap: 24 }}>
-          {SECTIONS.filter(s => userScope >= SCOPE_ORDER[s.minScope]).map(section => (
-            <div key={section.key}>
+          {filteredSections.map(section => (
+            <div key={section.section}>
               <div style={{ padding: '0 14px', marginBottom: 8, fontSize: 9, fontWeight: 800, letterSpacing: '0.15em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.12)' }}>
-                {section.label}
+                {section.section}
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                 {section.items.map(item => {
                   const active = location.pathname === item.path || location.pathname.startsWith(item.path + '/');
+                  const label = isInvestor && item.investorLabel ? item.investorLabel : item.label;
                   return (
                     <NavLink key={item.path} to={item.path} onClick={onClose} style={linkStyle(active)}>
                       {active && <div style={{ position: 'absolute', left: 0, top: '22%', bottom: '22%', width: 3, borderRadius: '0 3px 3px 0', background: 'linear-gradient(180deg, #d4a843, #e8c468)' }} />}
                       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, opacity: 0.7 }}>
                         {item.icon}
                       </svg>
-                      <span>{item.label}</span>
+                      <span>{label}</span>
                     </NavLink>
                   );
                 })}
@@ -118,31 +128,33 @@ export default function Sidebar({ isOpen, onClose }) {
             </div>
           ))}
 
-          {/* Coming Soon */}
-          <div style={{ borderTop: '1px solid rgba(255,255,255,0.03)', paddingTop: 16 }}>
-            <div style={{ padding: '0 14px', marginBottom: 8, fontSize: 9, fontWeight: 800, letterSpacing: '0.15em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.08)' }}>
-              Coming Soon
+          {/* Coming Soon — hide for investors */}
+          {!isInvestor && (
+            <div style={{ borderTop: '1px solid rgba(255,255,255,0.03)', paddingTop: 16 }}>
+              <div style={{ padding: '0 14px', marginBottom: 8, fontSize: 9, fontWeight: 800, letterSpacing: '0.15em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.08)' }}>
+                Coming Soon
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                {FEATURES.map(item => {
+                  const active = location.pathname === item.path;
+                  return (
+                    <NavLink key={item.path} to={item.path} onClick={onClose} style={{ ...linkStyle(active), opacity: active ? 1 : 0.35, fontSize: 12 }}>
+                      <div style={{ width: 18, height: 18, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                        <div style={{ width: 6, height: 6, borderRadius: '50%', background: 'rgba(212,168,67,0.25)' }} />
+                      </div>
+                      <span>{item.label}</span>
+                    </NavLink>
+                  );
+                })}
+              </div>
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-              {FEATURES.map(item => {
-                const active = location.pathname === item.path;
-                return (
-                  <NavLink key={item.path} to={item.path} onClick={onClose} style={{ ...linkStyle(active), opacity: active ? 1 : 0.35, fontSize: 12 }}>
-                    <div style={{ width: 18, height: 18, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                      <div style={{ width: 6, height: 6, borderRadius: '50%', background: 'rgba(212,168,67,0.25)' }} />
-                    </div>
-                    <span>{item.label}</span>
-                  </NavLink>
-                );
-              })}
-            </div>
-          </div>
+          )}
+
           {/* Contact & ICUNI Labs */}
           <div style={{ borderTop: '1px solid rgba(255,255,255,0.03)', paddingTop: 16, marginTop: 'auto' }}>
             <NavLink to="/contact" onClick={onClose} style={linkStyle(location.pathname === '/contact')}>
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, opacity: 0.7 }}>
-                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
-                <polyline points="22,6 12,13 2,6"/>
+                {ICON.contact}
               </svg>
               <span>Contact</span>
             </NavLink>

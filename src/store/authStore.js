@@ -60,4 +60,29 @@ const useAuthStore = create((set, get) => ({
   },
 }));
 
+// ─── Role-based page access ─────────────────
+// Defines which nav items each role can see
+export const ROLE_PAGES = {
+  group_admin: [
+    'dashboard', 'units', 'tenancies', 'maintenance', 'payments',
+    'short-term', 'properties', 'staff', 'development', 'analytics', 'contact',
+  ],
+  country_admin: [
+    'dashboard', 'units', 'tenancies', 'maintenance', 'payments',
+    'short-term', 'properties', 'staff', 'development', 'contact',
+  ],
+  property_manager: [
+    'dashboard', 'units', 'tenancies', 'maintenance', 'payments',
+    'short-term', 'contact',
+  ],
+  viewer: [
+    'dashboard', 'properties', 'payments', 'development', 'contact',
+  ],
+};
+
+export function canAccessPage(role, pageKey) {
+  if (!role || !ROLE_PAGES[role]) return false;
+  return ROLE_PAGES[role].includes(pageKey);
+}
+
 export default useAuthStore;

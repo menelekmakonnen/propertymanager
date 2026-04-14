@@ -14,6 +14,9 @@ import { MAINTENANCE_CATEGORY_ICONS, MAINTENANCE_PRIORITY_COLORS } from '../util
 export default function Dashboard() {
   const currentUser = useAuthStore(s => s.currentUser);
 
+  if (currentUser?.role === 'viewer') {
+    return <InvestorDashboard />;
+  }
   if (currentUser?.scopeType === 'property') {
     return <PropertyDashboard />;
   }
@@ -399,6 +402,128 @@ function PortfolioDashboard() {
           </div>
         </Card>
       )}
+    </div>
+  );
+}
+
+// ─── Investor Dashboard (Viewer) ────────────
+function InvestorDashboard() {
+  const currentUser = useAuthStore(s => s.currentUser);
+  const portfolioStats = usePortfolioStats();
+  const revenueTrend = useRevenueTrend();
+  const occupancyTrend = useOccupancyTrend();
+  const data = useScopedData();
+  const dataStore = useDataStore();
+  const navigate = useNavigate();
+
+  const managedProperties = data.managedProperties;
+
+  // Simulated investor metrics
+  const estimatedPortfolioValue = portfolioStats.totalRevenue * 120; // ~10 year multiple
+  const annualYield = portfolioStats.totalRevenue > 0 ? ((portfolioStats.totalRevenue * 12) / estimatedPortfolioValue * 100) : 0;
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 28 }} className="animate-fade-in">
+      {/* Welcome */}
+      <div>
+        <h1 style={{ fontSize: 22, fontWeight: 700, color: '#0f172a', marginBottom: 4 }}>
+          Welcome, {currentUser?.name?.split(' ')[0]}
+        </h1>
+        <p style={{ fontSize: 13, color: '#64748b' }}>
+          Your portfolio overview · {currentUser?.title}
+        </p>
+      </div>
+
+      {/* Financial KPIs */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 16 }} className="lg:!grid-cols-4">
+        <StatsCard
+          title="Portfolio Value"
+          value={formatCurrency(estimatedPortfolioValue, 'USD')}
+          subtitle="Estimated"
+          color="gold"
+          icon={<svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>}
+        />
+        <StatsCard
+          title="Monthly Revenue"
+          value={formatCurrency(portfolioStats.totalRevenue, 'USD')}
+          color="green"
+          icon={<svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>}
+          onClick={() => navigate('/payments')}
+        />
+        <StatsCard
+          title="Occupancy Rate"
+          value={formatPercent(portfolioStats.overallOccupancy, 0)}
+          subtitle={`${portfolioStats.totalOccupied} of ${portfolioStats.totalUnits} units`}
+          color="blue"
+          icon={<svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>}
+        />
+        <StatsCard
+          title="Annual Yield"
+          value={annualYield.toFixed(1) + '%'}
+          subtitle="Estimated ROI"
+          color="purple"
+          icon={<svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>}
+        />
+      </div>
+
+      {/* Charts */}
+      <div style={{ display: 'grid', gap: 24 }} className="lg:!grid-cols-2">
+        <Card>
+          <h3 style={{ fontSize: 14, fontWeight: 700, color: '#0f172a', marginBottom: 16 }}>Revenue Trend</h3>
+          <RevenueBarChart data={revenueTrend} height={250} />
+        </Card>
+        <Card>
+          <h3 style={{ fontSize: 14, fontWeight: 700, color: '#0f172a', marginBottom: 16 }}>Occupancy Trend</h3>
+          <TrendLineChart data={occupancyTrend} height={250} />
+        </Card>
+      </div>
+
+      {/* Properties Performance */}
+      <div>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+          <h3 style={{ fontSize: 14, fontWeight: 700, color: '#0f172a' }}>Property Performance</h3>
+          <button onClick={() => navigate('/properties')} style={{ fontSize: 12, color: '#d4a843', fontWeight: 600, background: 'none', border: 'none', cursor: 'pointer' }}>
+            View All →
+          </button>
+        </div>
+        <div style={{ display: 'grid', gap: 16 }} className="sm:!grid-cols-2 lg:!grid-cols-3">
+          {managedProperties.map(prop => {
+            const stats = dataStore.getPropertyStats(prop.id);
+            if (!stats) return null;
+            return (
+              <Card key={prop.id} onClick={() => navigate(`/properties/${prop.id}`)}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
+                  <div style={{
+                    width: 40, height: 40, borderRadius: 12, flexShrink: 0,
+                    background: `linear-gradient(135deg, ${prop.gradient?.[0] || '#0a1128'}, ${prop.gradient?.[1] || '#162044'})`,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  }}>
+                    <span style={{ color: 'white', fontSize: 10, fontWeight: 700 }}>{prop.name.slice(0, 2).toUpperCase()}</span>
+                  </div>
+                  <div style={{ minWidth: 0 }}>
+                    <div style={{ fontSize: 14, fontWeight: 600, color: '#0f172a' }}>{prop.name}</div>
+                    <div style={{ fontSize: 11, color: '#94a3b8' }}>{prop.location}</div>
+                  </div>
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12, textAlign: 'center' }}>
+                  <div>
+                    <div style={{ fontSize: 18, fontWeight: 700, color: '#0f172a' }}>{stats.occupancyRate.toFixed(0)}%</div>
+                    <div style={{ fontSize: 10, color: '#94a3b8' }}>Occupancy</div>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: 18, fontWeight: 700, color: '#0f172a' }}>{stats.totalUnits}</div>
+                    <div style={{ fontSize: 10, color: '#94a3b8' }}>Units</div>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: 14, fontWeight: 700, color: '#059669' }}>{formatCurrency(stats.revenueThisMonth, stats.currency)}</div>
+                    <div style={{ fontSize: 10, color: '#94a3b8' }}>Revenue</div>
+                  </div>
+                </div>
+              </Card>
+            );
+          })}
+        </div>
+      </div>
     </div>
   );
 }
