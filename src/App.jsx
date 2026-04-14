@@ -18,6 +18,7 @@ import PropertyDetail from './pages/PropertyDetail';
 import Staff from './pages/Staff';
 import Analytics from './pages/Analytics';
 import Development from './pages/Development';
+import Contact from './pages/Contact';
 import { TenantPortal, InvestorPortal, AirbnbIntegration, ConstructionHandover, AIMaintenanceTriage } from './pages/features';
 
 export default function App() {
@@ -49,6 +50,7 @@ export default function App() {
           <Route path="/features/airbnb" element={<AirbnbIntegration />} />
           <Route path="/features/construction" element={<ConstructionHandover />} />
           <Route path="/features/ai-maintenance" element={<AIMaintenanceTriage />} />
+          <Route path="/contact" element={<Contact />} />
         </Route>
 
         {/* Catch-all */}

@@ -107,7 +107,7 @@ export default function Login() {
 
         {/* Footer */}
         <div style={{ color: 'rgba(255,255,255,0.1)', fontSize: 11 }}>
-          © 2026 Mobus Property Ltd · Powered by ICUNI Labs
+          © 2026 Mobus Property Ltd · Powered by <a href="https://labs.icuni.org" target="_blank" rel="noopener noreferrer" style={{ color: 'rgba(255,255,255,0.25)', textDecoration: 'none' }}>ICUNI Labs</a>
         </div>
       </div>
 
@@ -270,7 +270,7 @@ export default function Login() {
 
           {/* Mobile footer */}
           <p className="lg:hidden" style={{ textAlign: 'center', color: 'rgba(255,255,255,0.08)', fontSize: 11, marginTop: 40 }}>
-            © 2026 Mobus Property · ICUNI Labs
+            © 2026 Mobus Property · <a href="https://labs.icuni.org" target="_blank" rel="noopener noreferrer" style={{ color: 'rgba(255,255,255,0.2)', textDecoration: 'none' }}>ICUNI Labs</a>
           </p>
         </div>
       </div>

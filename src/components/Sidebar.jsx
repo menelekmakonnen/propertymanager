@@ -137,6 +137,22 @@ export default function Sidebar({ isOpen, onClose }) {
               })}
             </div>
           </div>
+          {/* Contact & ICUNI Labs */}
+          <div style={{ borderTop: '1px solid rgba(255,255,255,0.03)', paddingTop: 16, marginTop: 'auto' }}>
+            <NavLink to="/contact" onClick={onClose} style={linkStyle(location.pathname === '/contact')}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, opacity: 0.7 }}>
+                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+                <polyline points="22,6 12,13 2,6"/>
+              </svg>
+              <span>Contact</span>
+            </NavLink>
+            <a href="https://labs.icuni.org" target="_blank" rel="noopener noreferrer" style={{ ...linkStyle(false), opacity: 0.4, fontSize: 11, marginTop: 2 }}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" style={{ flexShrink: 0, opacity: 0.7 }}>
+                <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>
+              </svg>
+              <span>ICUNI Labs</span>
+            </a>
+          </div>
         </nav>
 
         {/* User */}
